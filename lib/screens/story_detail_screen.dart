@@ -167,8 +167,8 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
       widget.story.time * 1000,
     );
 
-    return WillPopScope(
-      onWillPop: () async => true,
+    return PopScope(
+      canPop: true,
       child: Scaffold(
         body: GestureDetector(
           onHorizontalDragUpdate: _handleDragUpdate,
@@ -337,7 +337,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                                         color: theme
                                             .colorScheme
                                             .surfaceContainerHighest
-                                            .withOpacity(0.3),
+                                            .withValues(alpha: 0.3),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Html(
@@ -451,7 +451,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                             border: Border(
                               left: BorderSide(
                                 color: theme.colorScheme.outlineVariant
-                                    .withOpacity(0.5),
+                                    .withValues(alpha: 0.5),
                                 width: 1,
                               ),
                             ),
@@ -493,10 +493,10 @@ class _CommentCard extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
           width: 1,
         ),
       ),

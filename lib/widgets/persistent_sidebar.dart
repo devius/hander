@@ -21,7 +21,7 @@ class _PersistentSidebarState extends State<PersistentSidebar> {
         color: theme.colorScheme.surface,
         border: Border(
           right: BorderSide(
-            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
@@ -136,7 +136,7 @@ class _PersistentSidebarState extends State<PersistentSidebar> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: isSelected
-            ? Colors.deepOrange.withOpacity(0.1)
+            ? Colors.deepOrange.withValues(alpha: 0.1)
             : Colors.transparent,
       ),
       child: InkWell(

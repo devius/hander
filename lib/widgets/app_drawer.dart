@@ -59,7 +59,7 @@ class AppDrawer extends StatelessWidget {
                   Text(
                     'Reader',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14,
                     ),
                   ),
@@ -124,7 +124,7 @@ class AppDrawer extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -165,7 +165,7 @@ class AppDrawer extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: isSelected
-            ? Colors.deepOrange.withOpacity(0.1)
+            ? Colors.deepOrange.withValues(alpha: 0.1)
             : Colors.transparent,
       ),
       child: ListTile(
