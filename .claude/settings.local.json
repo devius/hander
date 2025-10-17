@@ -3,7 +3,10 @@
     "allow": [
       "Bash(flutter:*)",
       "Bash(brew install:*)",
-      "Bash(xcode-select:*)"
+      "Bash(xcode-select:*)",
+      "Bash(chmod:*)",
+      "Bash(python3:*)",
+      "Bash(pip3 install:*)"
     ],
     "deny": [],
     "ask": []
