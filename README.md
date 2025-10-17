@@ -1,5 +1,7 @@
 # Hander - Hacker News Reader
 
+![](hander.png)
+
 A modern, feature-rich Hacker News reader built with Flutter for macOS, featuring a beautiful UI and seamless browsing experience.
 
 ## Features
