@@ -34,7 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 500) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 500) {
       context.read<StoriesProvider>().loadMore();
     }
   }
@@ -54,21 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  String _getCategorySubtitle(StoryType type) {
-    switch (type) {
-      case StoryType.top:
-        return 'Most popular posts on Hacker News';
-      case StoryType.newest:
-        return 'Latest submissions';
-      case StoryType.best:
-        return 'Highest rated stories';
-      case StoryType.ask:
-        return 'Questions and answers from the community';
-      case StoryType.show:
-        return 'Projects and products from the community';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,10 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: CustomScrollView(
               controller: _scrollController,
-              slivers: [
-                _buildAppBar(context),
-                _buildStoryList(context),
-              ],
+              slivers: [_buildAppBar(context), _buildStoryList(context)],
             ),
           ),
         ],
@@ -173,9 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (provider.stories.isEmpty) {
       return const SliverFillRemaining(
-        child: Center(
-          child: Text('No stories found'),
-        ),
+        child: Center(child: Text('No stories found')),
       );
     }
 
@@ -186,9 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
           if (index == provider.stories.length) {
             return const Padding(
               padding: EdgeInsets.all(32.0),
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: Center(child: CircularProgressIndicator()),
             );
           }
 
