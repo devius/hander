@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter:*)",
+      "Bash(brew install:*)",
+      "Bash(xcode-select:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
