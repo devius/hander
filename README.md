@@ -180,7 +180,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Your Name - [@DMachakhelidze](https://x.com/DMachakhelidze)
+Davit Matchakhelidze - [@DMachakhelidze](https://x.com/DMachakhelidze)
 
 Project Link: [https://github.com/devius/hander](https://github.com/devius/hander)
 
