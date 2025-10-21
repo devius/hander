@@ -59,6 +59,9 @@ dependencies:
   # Comment tree view
   comment_tree: ^0.3.0
 
+  # Window management
+  window_manager: ^0.5.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
