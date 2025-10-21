@@ -16,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
+  bool _showScrollToTop = false;
 
   @override
   void initState() {
@@ -38,6 +39,14 @@ class _HomeScreenState extends State<HomeScreen> {
         _scrollController.position.maxScrollExtent - 500) {
       context.read<StoriesProvider>().loadMore();
     }
+
+    // Show/hide scroll to top button
+    final showButton = _scrollController.position.pixels > 500;
+    if (showButton != _showScrollToTop) {
+      setState(() {
+        _showScrollToTop = showButton;
+      });
+    }
   }
 
   String _getCategoryTitle(StoryType type) {
@@ -55,6 +64,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,9 +82,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // Main Content
           Expanded(
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [_buildAppBar(context), _buildStoryList(context)],
+            child: Stack(
+              children: [
+                CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [_buildAppBar(context), _buildStoryList(context)],
+                ),
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: AnimatedSlide(
+                    duration: const Duration(milliseconds: 300),
+                    offset: _showScrollToTop ? Offset.zero : const Offset(0, 2),
+                    curve: Curves.easeOut,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 300),
+                      opacity: _showScrollToTop ? 1.0 : 0.0,
+                      child: FloatingActionButton(
+                        onPressed: _scrollToTop,
+                        backgroundColor: Colors.deepOrange,
+                        child: const Icon(Icons.arrow_upward_rounded),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

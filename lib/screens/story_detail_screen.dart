@@ -3,6 +3,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:shimmer/shimmer.dart';
 import '../models/story.dart';
 import '../models/comment.dart';
 import '../services/hackernews_api.dart';
@@ -28,6 +29,9 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   double _dragExtent = 0.0;
   int _currentPage = 0;
   static const int _pageSize = 20;
+  double _leftPanelWidth = 400.0; // Initial width of left panel
+  bool _isDraggingDivider = false;
+  bool _showScrollToTop = false;
 
   @override
   void initState() {
@@ -49,9 +53,25 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
         _commentsScrollController.position.maxScrollExtent - 500) {
       _loadMoreComments();
     }
+
+    // Show/hide scroll to top button
+    final showButton = _commentsScrollController.position.pixels > 500;
+    if (showButton != _showScrollToTop) {
+      setState(() {
+        _showScrollToTop = showButton;
+      });
+    }
   }
 
   bool get _hasMoreComments => _currentPage * _pageSize < _allCommentIds.length;
+
+  void _scrollToTop() {
+    _commentsScrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
 
   void _handleDragUpdate(DragUpdateDetails details) {
     setState(() {
@@ -160,6 +180,233 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     }
   }
 
+  Future<void> _loadRepliesRecursively(Comment comment) async {
+    if (!comment.hasReplies || comment.replies != null) return;
+
+    comment.isLoadingReplies = true;
+    setState(() {});
+
+    try {
+      final futures = comment.kids!.map((id) => _api.getComment(id));
+      final replies = await Future.wait(futures);
+      comment.replies = replies;
+
+      // Don't load nested replies automatically - let user expand them manually
+    } catch (e) {
+      // Handle error silently
+    } finally {
+      comment.isLoadingReplies = false;
+    }
+  }
+
+  Widget _buildCommentTree(Comment comment, ThemeData theme, {int depth = 0}) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Avatar
+              CircleAvatar(
+                radius: depth == 0 ? 18 : 14,
+                backgroundColor: depth == 0
+                    ? Colors.deepOrange
+                    : Colors.deepOrange.withValues(alpha: 0.7),
+                child: Text(
+                  comment.by.isNotEmpty ? comment.by[0].toUpperCase() : '?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: depth == 0 ? 14 : 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Comment content
+              Expanded(
+                child: _buildCommentContent(comment, theme, depth == 0),
+              ),
+            ],
+          ),
+          // Render nested replies with indentation
+          if (comment.replies != null && comment.replies!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 24, top: 4),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      color: Colors.deepOrange.withValues(alpha: 0.3),
+                      width: 2,
+                    ),
+                  ),
+                ),
+                padding: const EdgeInsets.only(left: 12),
+                child: Column(
+                  children: comment.replies!
+                      .map((reply) => _buildCommentTree(reply, theme, depth: depth + 1))
+                      .toList(),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentContent(Comment comment, ThemeData theme, bool isRoot) {
+    if (comment.deleted || comment.text == null) {
+      return const SizedBox.shrink();
+    }
+
+    final timestamp = DateTime.fromMillisecondsSinceEpoch(comment.time * 1000);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Comment header
+          Row(
+            children: [
+              Text(
+                comment.by,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.deepOrange,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                timeago.format(timestamp),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Comment text
+          Html(
+            data: comment.text!,
+            style: {
+              "body": Style(
+                margin: Margins.all(0),
+                padding: HtmlPaddings.all(0),
+                fontSize: FontSize(isRoot ? 14 : 13),
+              ),
+              "p": Style(margin: Margins.all(0), padding: HtmlPaddings.all(0)),
+              "a": Style(
+                color: Colors.deepOrange,
+                textDecoration: TextDecoration.underline,
+              ),
+            },
+            onLinkTap: (url, attributes, element) async {
+              if (url != null) {
+                final uri = Uri.parse(url);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              }
+            },
+          ),
+
+          // Load replies button at the bottom (only show if replies not loaded)
+          if (comment.hasReplies && comment.replies == null) ...[
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: comment.isLoadingReplies
+                  ? null
+                  : () async {
+                      await _loadRepliesRecursively(comment);
+                      setState(() {});
+                    },
+              child: comment.isLoadingReplies
+                  ? Shimmer.fromColors(
+                      baseColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      highlightColor: theme.colorScheme.surface,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              width: 100,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.add_comment_outlined,
+                            size: 16,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Load ${comment.kids!.length} ${comment.kids!.length == 1 ? 'reply' : 'replies'}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -210,14 +457,18 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
 
               // Split view content
               Expanded(
-                child: Row(
-                  children: [
-                    // Left side - Article info and comments
-                    Expanded(
-                      flex: 1,
-                      child: CustomScrollView(
-                        controller: _commentsScrollController,
-                        slivers: [
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Row(
+                      children: [
+                        // Left side - Article info and comments
+                        SizedBox(
+                          width: _leftPanelWidth.clamp(200.0, constraints.maxWidth - 200.0),
+                          child: Stack(
+                            children: [
+                              CustomScrollView(
+                                controller: _commentsScrollController,
+                                slivers: [
                           SliverToBoxAdapter(
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
@@ -429,10 +680,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                                   }
 
                                   final comment = _comments[index];
-                                  return _CommentCard(
-                                    comment: comment,
-                                    depth: 0,
-                                  );
+                                  return _buildCommentTree(comment, theme);
                                 },
                                 childCount:
                                     _comments.length + (_isLoadingMore ? 1 : 0),
@@ -440,105 +688,80 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                             ),
                         ],
                       ),
-                    ),
+                              Positioned(
+                                right: 16,
+                                bottom: 16,
+                                child: AnimatedSlide(
+                                  duration: const Duration(milliseconds: 300),
+                                  offset: _showScrollToTop ? Offset.zero : const Offset(0, 2),
+                                  curve: Curves.easeOut,
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 300),
+                                    opacity: _showScrollToTop ? 1.0 : 0.0,
+                                    child: FloatingActionButton(
+                                      onPressed: _scrollToTop,
+                                      backgroundColor: Colors.deepOrange,
+                                      child: const Icon(Icons.arrow_upward_rounded),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
 
-                    // Right side - WebView Preview (larger)
-                    if (widget.story.hasUrl && _webViewController != null)
-                      Expanded(
-                        flex: 2,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              left: BorderSide(
-                                color: theme.colorScheme.outlineVariant
-                                    .withValues(alpha: 0.5),
-                                width: 1,
+                        // Draggable divider
+                        if (widget.story.hasUrl && _webViewController != null)
+                          MouseRegion(
+                            cursor: SystemMouseCursors.resizeColumn,
+                            child: GestureDetector(
+                              onHorizontalDragStart: (_) {
+                                setState(() {
+                                  _isDraggingDivider = true;
+                                });
+                              },
+                              onHorizontalDragUpdate: (details) {
+                                setState(() {
+                                  _leftPanelWidth = (_leftPanelWidth + details.delta.dx)
+                                      .clamp(200.0, constraints.maxWidth - 200.0);
+                                });
+                              },
+                              onHorizontalDragEnd: (_) {
+                                setState(() {
+                                  _isDraggingDivider = false;
+                                });
+                              },
+                              child: Container(
+                                width: 8,
+                                decoration: BoxDecoration(
+                                  color: _isDraggingDivider
+                                      ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                                      : Colors.transparent,
+                                  border: Border(
+                                    left: BorderSide(
+                                      color: theme.colorScheme.outlineVariant
+                                          .withValues(alpha: 0.5),
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                          child: WebViewWidget(controller: _webViewController!),
-                        ),
-                      ),
-                  ],
+
+                        // Right side - WebView Preview
+                        if (widget.story.hasUrl && _webViewController != null)
+                          Expanded(
+                            child: WebViewWidget(controller: _webViewController!),
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _CommentCard extends StatelessWidget {
-  final Comment comment;
-  final int depth;
-
-  const _CommentCard({required this.comment, required this.depth});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final timestamp = DateTime.fromMillisecondsSinceEpoch(comment.time * 1000);
-
-    if (comment.deleted || comment.text == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      margin: EdgeInsets.only(
-        left: 16.0 + (depth * 12.0),
-        right: 16.0,
-        bottom: 12.0,
-      ),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Comment header
-          Row(
-            children: [
-              Icon(Icons.person_rounded, size: 16, color: Colors.deepOrange),
-              const SizedBox(width: 4),
-              Text(
-                comment.by,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.deepOrange,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                timeago.format(timestamp),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Comment text
-          Html(
-            data: comment.text!,
-            style: {
-              "body": Style(
-                margin: Margins.all(0),
-                padding: HtmlPaddings.all(0),
-                fontSize: FontSize(14),
-              ),
-              "p": Style(margin: Margins.all(0), padding: HtmlPaddings.all(0)),
-            },
-          ),
-        ],
       ),
     );
   }
