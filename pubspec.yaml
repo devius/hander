@@ -56,6 +56,9 @@ dependencies:
   # WebView
   webview_flutter: ^4.13.0
 
+  # Comment tree view
+  comment_tree: ^0.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

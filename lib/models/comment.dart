@@ -6,6 +6,8 @@ class Comment {
   final List<int>? kids;
   final int parent;
   final bool deleted;
+  List<Comment>? replies; // For storing loaded nested comments
+  bool isLoadingReplies = false; // Track loading state
 
   Comment({
     required this.id,
@@ -15,6 +17,7 @@ class Comment {
     this.kids,
     required this.parent,
     this.deleted = false,
+    this.replies,
   });
 
   factory Comment.fromJson(Map<String, dynamic> json) {
