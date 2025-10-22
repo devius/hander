@@ -13,6 +13,9 @@ A modern, feature-rich Hacker News reader built with Flutter for macOS, featurin
 - **Split-View Layout**: Read articles and comments side by side with an integrated WebView
 - **Icon Sidebar**: Quick navigation between different story categories
 - **Real-time Comments**: View and load comments progressively as you scroll
+- **Nested Comment Replies**: Full support for threaded discussions with collapsible nested replies
+- **Scroll-to-Top**: Animated floating action buttons for quick navigation to the top of long lists
+- **Window Management**: Minimum window size constraints (800x600) ensure usable layout
 
 ### 🎨 Design
 
@@ -77,6 +80,7 @@ flutter run -d macos
 - **shimmer**: ^3.0.0 - Loading animations
 - **flutter_html**: ^3.0.0-beta.2 - HTML rendering for comments
 - **webview_flutter**: ^4.4.2 - Embedded web content viewer
+- **window_manager**: ^0.4.4 - Native window size and position management
 
 ## Project Structure
 
@@ -146,6 +150,43 @@ The built app will be available at:
 build/macos/Build/Products/Release/hander.app
 ```
 
+### Creating a DMG Installer
+
+To create a DMG installer for distribution:
+
+1. Install create-dmg:
+```bash
+brew install create-dmg
+```
+
+2. Build and create DMG:
+```bash
+flutter build macos --release
+create-dmg \
+  --volname "Hander" \
+  --window-pos 200 120 \
+  --window-size 800 400 \
+  --icon-size 100 \
+  --app-drop-link 600 185 \
+  "Hander.dmg" \
+  "build/macos/Build/Products/Release/hander.app"
+```
+
+### Automated Releases
+
+The project includes GitHub Actions workflow for automated releases:
+
+- **Trigger**: Push a version tag (e.g., `v1.0.0`)
+- **Output**: Automatically builds and creates both DMG and ZIP files
+- **Release**: Creates a GitHub release with installation instructions
+- **Caching**: Optimized build times with Flutter SDK, pub dependencies, and CocoaPods caching
+
+To create a release:
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -168,6 +209,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Roadmap
 
+### Completed ✅
+- [x] Nested comment replies with loading states
+- [x] Scroll-to-top floating action buttons
+- [x] Window size constraints
+- [x] GitHub Actions CI/CD with DMG releases
+
+### Planned 🚧
 - [ ] Search functionality
 - [ ] Bookmarks and favorites
 - [ ] Keyboard shortcuts
