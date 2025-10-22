@@ -56,14 +56,11 @@ jobs:
     - name: Precache Flutter artifacts
       run: flutter precache --macos
 
-    - name: Install dependencies
-      run: flutter pub get
-
-    - name: Clean build
-      run: flutter clean
-
     - name: Generate ephemeral files
       run: flutter create --platforms=macos .
+
+    - name: Install dependencies
+      run: flutter pub get
 
     - name: Install CocoaPods dependencies
       run: cd macos && pod install && cd ..
