@@ -1,22 +1,20 @@
-name: Build and Release macOS App
+name: Build and Release macOS App with DMG
 
 on:
   push:
     tags:
-      - 'v*.*.*'  # Triggers on version tags like v1.0.0
+      - 'v*.*.*'
 
 jobs:
   build-macos:
     runs-on: macos-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
     
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
+    - uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.24.0'  # Use your Flutter version
+        flutter-version: '3.24.0'
         channel: 'stable'
     
     - name: Enable macOS
@@ -28,27 +26,48 @@ jobs:
     - name: Build macOS app
       run: flutter build macos --release
     
+    - name: Install create-dmg
+      run: brew install create-dmg
+    
     - name: Get app name
       id: app_name
       run: |
         APP_NAME=$(ls build/macos/Build/Products/Release/ | grep ".app" | head -n 1)
+        APP_NAME_NO_EXT="${APP_NAME%.app}"
         echo "app_name=${APP_NAME}" >> $GITHUB_OUTPUT
+        echo "app_name_no_ext=${APP_NAME_NO_EXT}" >> $GITHUB_OUTPUT
     
-    - name: Create ZIP archive
+    - name: Create DMG
+      run: |
+        create-dmg \
+          --volname "${{ steps.app_name.outputs.app_name_no_ext }}" \
+          --window-pos 200 120 \
+          --window-size 800 400 \
+          --icon-size 100 \
+          --app-drop-link 600 185 \
+          "${{ steps.app_name.outputs.app_name_no_ext }}.dmg" \
+          "build/macos/Build/Products/Release/${{ steps.app_name.outputs.app_name }}" || true
+    
+    - name: Create ZIP as fallback
       run: |
         cd build/macos/Build/Products/Release
-        zip -r ../../../../../${{ steps.app_name.outputs.app_name }}.zip ${{ steps.app_name.outputs.app_name }}
+        zip -r ../../../../../${{ steps.app_name.outputs.app_name_no_ext }}.zip ${{ steps.app_name.outputs.app_name }}
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          ${{ steps.app_name.outputs.app_name }}.zip
+          ${{ steps.app_name.outputs.app_name_no_ext }}.dmg
+          ${{ steps.app_name.outputs.app_name_no_ext }}.zip
         body: |
-          ## macOS App Release
+          ## macOS App Release ${{ github.ref_name }}
           
-          Download the ZIP file, extract it, and run the app.
+          ### Installation
+          - **DMG**: Download, open, and drag the app to Applications
+          - **ZIP**: Download, extract, and run the app
           
-          **Note:** You may need to allow the app in System Preferences > Privacy & Security
+          **Note:** On first run, you may need to:
+          1. Right-click the app and select "Open"
+          2. Or go to System Preferences > Privacy & Security and allow the app
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
