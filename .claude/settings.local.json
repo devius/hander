@@ -6,7 +6,16 @@
       "Bash(xcode-select:*)",
       "Bash(chmod:*)",
       "Bash(python3:*)",
-      "Bash(pip3 install:*)"
+      "Bash(pip3 install:*)",
+      "WebSearch",
+      "WebFetch(domain:pub.dev)",
+      "WebFetch(domain:medium.com)",
+      "Bash(nc localhost 50519)",
+      "Bash(nc localhost 50926)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
