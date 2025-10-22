@@ -86,3 +86,4 @@ app.*.map.json
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
 .claude/settings.local.json
+.claude/settings.local.json
