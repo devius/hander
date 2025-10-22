@@ -18,10 +18,16 @@ jobs:
     
     - name: Enable macOS
       run: flutter config --enable-macos-desktop
-    
+
+    - name: Precache Flutter artifacts
+      run: flutter precache --macos
+
     - name: Install dependencies
       run: flutter pub get
-    
+
+    - name: Generate Flutter files
+      run: flutter pub get && cd macos && pod install && cd ..
+
     - name: Build macOS app
       run: flutter build macos --release
     
