@@ -5,10 +5,13 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: write
+
 jobs:
   build-macos:
     runs-on: macos-latest
-    
+
     steps:
     - uses: actions/checkout@v3
 
