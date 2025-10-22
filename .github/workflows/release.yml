@@ -1,0 +1,54 @@
+name: Build and Release macOS App
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'  # Use your Flutter version
+        channel: 'stable'
+    
+    - name: Enable macOS
+      run: flutter config --enable-macos-desktop
+    
+    - name: Install dependencies
+      run: flutter pub get
+    
+    - name: Build macOS app
+      run: flutter build macos --release
+    
+    - name: Get app name
+      id: app_name
+      run: |
+        APP_NAME=$(ls build/macos/Build/Products/Release/ | grep ".app" | head -n 1)
+        echo "app_name=${APP_NAME}" >> $GITHUB_OUTPUT
+    
+    - name: Create ZIP archive
+      run: |
+        cd build/macos/Build/Products/Release
+        zip -r ../../../../../${{ steps.app_name.outputs.app_name }}.zip ${{ steps.app_name.outputs.app_name }}
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ${{ steps.app_name.outputs.app_name }}.zip
+        body: |
+          ## macOS App Release
+          
+          Download the ZIP file, extract it, and run the app.
+          
+          **Note:** You may need to allow the app in System Preferences > Privacy & Security
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
