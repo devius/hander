@@ -1,6 +1,8 @@
 # Hander - Hacker News Reader
 
 <img src="https://github.com/devius/hander/blob/main/hander.png" width="48">
+<img src="https://github.com/devius/hander/blob/main/home-screen.png" width="600">
+<img src="https://github.com/devius/hander/blob/main/article-screen.png" width="600">
 
 A modern, feature-rich Hacker News reader built with Flutter for macOS, featuring a beautiful UI and seamless browsing experience.
 
@@ -155,11 +157,13 @@ build/macos/Build/Products/Release/hander.app
 To create a DMG installer for distribution:
 
 1. Install create-dmg:
+
 ```bash
 brew install create-dmg
 ```
 
 2. Build and create DMG:
+
 ```bash
 flutter build macos --release
 create-dmg \
@@ -182,6 +186,7 @@ The project includes GitHub Actions workflow for automated releases:
 - **Caching**: Optimized build times with Flutter SDK, pub dependencies, and CocoaPods caching
 
 To create a release:
+
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
@@ -210,12 +215,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Roadmap
 
 ### Completed ✅
+
 - [x] Nested comment replies with loading states
 - [x] Scroll-to-top floating action buttons
 - [x] Window size constraints
 - [x] GitHub Actions CI/CD with DMG releases
 
 ### Planned 🚧
+
 - [ ] Search functionality
 - [ ] Bookmarks and favorites
 - [ ] Keyboard shortcuts
